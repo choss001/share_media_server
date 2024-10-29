@@ -4,6 +4,7 @@ plugins {
 	id 'org.springframework.boot' version '3.3.4'
 	id 'io.spring.dependency-management' version '1.1.6'
 	id 'org.asciidoctor.jvm.convert' version '3.3.2'
+	id 'org.flywaydb.flyway' version '6.5.7'
 }
 
 group = 'com.media'
@@ -39,11 +40,14 @@ dependencies {
 	//developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 	annotationProcessor 'org.projectlombok:lombok'
 	implementation group: 'com.mysql', name: 'mysql-connector-j'
-	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+	implementation "org.flywaydb:flyway-mysql"
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:mysql'
+	testImplementation 'org.testcontainers:junit-jupiter'
 }
 
 tasks.named('test') {
@@ -54,4 +58,15 @@ tasks.named('test') {
 tasks.named('asciidoctor') {
 	inputs.dir snippetsDir
 	dependsOn test
+}
+flyway {
+	url = 'jdbc:mysql://localhost:3309/share_image'
+	user = 'root'
+	password = '0000'
+	// Optionally, specify the location of migration files
+	locations = ['filesystem:src/main/resources/db/migration']
+}
+
+test {
+	jvmArgs = []
 }

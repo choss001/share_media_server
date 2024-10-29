@@ -1,0 +1,7 @@
+From openjdk:17-oracle
+
+ADD build/libs/*.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java","-jar","app.jar"]

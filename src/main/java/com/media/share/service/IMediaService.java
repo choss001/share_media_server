@@ -1,2 +1,6 @@
-package com.media.share.service;public class IMediaService {
+package com.media.share.service;
+
+public interface IMediaService {
+
+    public String upload();
 }
