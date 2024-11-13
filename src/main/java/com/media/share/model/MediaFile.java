@@ -1,12 +1,24 @@
 package com.media.share.model;
 
 
+import com.media.share.dto.MediaFileDto;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 public class MediaFile {
+
+    public MediaFile(){ }
+
+    public MediaFile(MediaFileDto mediaFileDto){
+        setThumbnail_name(mediaFileDto.getThumbnail_name());
+        setThumbnail_path(mediaFileDto.getThumbnail_path());
+        setFileType(mediaFileDto.getFileType());
+        setFileName(mediaFileDto.getFileName());
+        setUploadDate(mediaFileDto.getUploadDate());
+        setFilePath(mediaFileDto.getFilePath());
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,6 +30,9 @@ public class MediaFile {
     @Column(nullable = false)
     private String filePath;
 
+    private String thumbnail_name;
+
+    private String thumbnail_path;
     private String fileType;
 
     private LocalDateTime uploadDate;
@@ -62,5 +77,22 @@ public class MediaFile {
 
     public void setUploadDate(LocalDateTime uploadDate) {
         this.uploadDate = uploadDate;
+    }
+
+
+    public String getThumbnail_name() {
+        return thumbnail_name;
+    }
+
+    public void setThumbnail_name(String thumbnail_name) {
+        this.thumbnail_name = thumbnail_name;
+    }
+
+    public String getThumbnail_path() {
+        return thumbnail_path;
+    }
+
+    public void setThumbnail_path(String thumbnail_path) {
+        this.thumbnail_path = thumbnail_path;
     }
 }

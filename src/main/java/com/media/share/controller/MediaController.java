@@ -1,7 +1,9 @@
 package com.media.share.controller;
 
+import com.media.share.dto.MediaFileDto;
 import com.media.share.model.MediaFile;
 import com.media.share.repository.MediaFileRepository;
+import com.media.share.service.MakeThumbNail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Optional;
+import java.util.UUID;
+
 
 @RestController
 public class MediaController {
@@ -35,6 +40,9 @@ public class MediaController {
 
     @Autowired
     private MediaFileRepository mediaFileRepository;
+
+    @Autowired
+    private MakeThumbNail makeThumbNail;
 
 
     @GetMapping("/test")
@@ -55,9 +63,17 @@ public class MediaController {
     @GetMapping("/stream/{videoId}")
     public ResponseEntity<Resource> streamVideo(@PathVariable("videoId") Long videoId) throws MalformedURLException, FileNotFoundException {
         //Video video = videoRepository.findById(videoId).orElseThrow(() -> new RuntimeException("Video not found"));
-        File file = ResourceUtils.getFile("classpath:static/test.mp4");
+
+        Optional<MediaFile> mediaFile = mediaFileRepository.findById(videoId);
+        if (mediaFile.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Return 404 if not found
+        }
+        String filePath = mediaFile.get().getFilePath();
+        //File file = ResourceUtils.getFile("classpath:static/test.mp4");
+        File file = ResourceUtils.getFile(filePath);
         Path videoPath = Paths.get(file.getPath());
 
+//        Resource videoResource = new UrlResource(videoPath.toUri());
         Resource videoResource = new UrlResource(videoPath.toUri());
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("video/mp4"))
@@ -69,11 +85,14 @@ public class MediaController {
     @PostMapping("/upload/media")
     public ResponseEntity<String> uploadMedia(@RequestParam("file") MultipartFile file) {
         try {
-            // Save the file
-            Path filePath = Paths.get(UPLOAD_DIR, file.getOriginalFilename());
+
+            // Save and move the file
+            Path filePath = Paths.get(UPLOAD_DIR, UUID.randomUUID().toString() + "_" + file.getOriginalFilename());
             Files.createDirectories(filePath.getParent()); // Ensure directory exists
             file.transferTo(filePath.toFile());
 
+            //make thumbnail
+            MediaFileDto mediaFileDto = makeThumbNail.doMake(file);
             // Generate a download URL
             String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
                     .path("/files/")
@@ -81,18 +100,20 @@ public class MediaController {
                     .toUriString();
 
             // file save to table
-            MediaFile mediaFile = new MediaFile();
-            mediaFile.setFileName(file.getOriginalFilename());
-            mediaFile.setFilePath(filePath.toString());
-            mediaFile.setFileType(file.getContentType());
-            mediaFile.setUploadDate(java.time.LocalDateTime.now());
+            mediaFileDto.setFileName(file.getOriginalFilename());
+            mediaFileDto.setFilePath(filePath.toString());
+            mediaFileDto.setFileType(file.getContentType());
+            mediaFileDto.setUploadDate(java.time.LocalDateTime.now());
 
+            MediaFile mediaFile = new MediaFile(mediaFileDto);
             mediaFileRepository.save(mediaFile);
+
 
 
             return ResponseEntity.ok(fileDownloadUri);
 
         } catch (IOException e) {
+            logger.info(e.toString());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload file");
         }
     }
