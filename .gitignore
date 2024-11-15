@@ -37,5 +37,5 @@ out/
 .vscode/
 
 ### springboot ###
-**/application.properties
+**/application*
 **/tmp/**
