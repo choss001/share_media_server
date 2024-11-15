@@ -40,6 +40,9 @@ public class MediaController {
     @Value("${spring.application.name}")
     private String name;
 
+    @Value("${file.path}")
+    private String filePathBase;
+
     @Autowired
     private MediaFileRepository mediaFileRepository;
 
@@ -123,14 +126,13 @@ public class MediaController {
                 .body(videoResource);
     }
 
-    private final String UPLOAD_DIR = "C:\\Users\\qsw233\\Desktop\\project\\share_media\\server\\tmp"; // Set your directory path here
 
     @PostMapping("/upload/media")
     public ResponseEntity<String> uploadMedia(@RequestParam("file") MultipartFile file) {
         try {
 
             // Save and move the file
-            Path filePath = Paths.get(UPLOAD_DIR, UUID.randomUUID().toString() + "_" + file.getOriginalFilename());
+            Path filePath = Paths.get(filePathBase, UUID.randomUUID().toString() + "_" + file.getOriginalFilename());
             Files.createDirectories(filePath.getParent()); // Ensure directory exists
             file.transferTo(filePath.toFile());
 

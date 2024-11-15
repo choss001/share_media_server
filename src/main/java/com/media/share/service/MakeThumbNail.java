@@ -7,6 +7,7 @@ import org.jcodec.common.model.Picture;
 import org.jcodec.scale.AWTUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,11 +29,15 @@ import java.util.UUID;
 public class MakeThumbNail {
     Logger logger = LoggerFactory.getLogger(MediaController.class);
 
+
+    @Value("${file.path}")
+    private String filePathBase;
+
     public MediaFileDto doMake(MultipartFile file, Path toFilePath){
 
         int frameNumber = 0;
         String thumbnailName = "thumbnailvideo-frame-" + UUID.randomUUID().toString() + file.getOriginalFilename()+".png";
-        String toFilePathThumbnail = "C:\\Users\\qsw233\\Desktop\\project\\share_media\\server\\tmp\\thumbnail\\"+thumbnailName;
+        String toFilePathThumbnail = filePathBase+"thumbnail\\"+thumbnailName;
         MediaFileDto mediaFileDto = new MediaFileDto();
         File outputFile = new File(toFilePathThumbnail);
         try {
