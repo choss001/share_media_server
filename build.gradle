@@ -40,6 +40,13 @@ dependencies {
 	//developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 	annotationProcessor 'org.projectlombok:lombok'
 	implementation group: 'com.mysql', name: 'mysql-connector-j'
+	//implementation 'org.imgscalr:imgscalr-lib:4.2'
+
+	implementation 'org.jcodec:jcodec:0.2.5'
+	implementation 'org.jcodec:jcodec-javase:0.2.5'
+
+
+
 	implementation "org.flywaydb:flyway-mysql"
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
