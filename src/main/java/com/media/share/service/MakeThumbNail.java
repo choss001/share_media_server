@@ -17,24 +17,24 @@ import java.util.UUID;
 @Service
 public class MakeThumbNail {
 
-    public MediaFileDto doMake(MultipartFile file){
+    public MediaFileDto doMake(MultipartFile file, Path toFilePath){
 
         int frameNumber = 0;
-        Path filePath = Paths.get("C:\\Users\\qsw233\\Desktop\\project\\share_media\\server\\tmp", file.getOriginalFilename());
-        String thumbnailName = "thumbnailvideo-frame-" + UUID.randomUUID().toString() + ".png";
-        String toFilePath = "C:\\Users\\qsw233\\Desktop\\project\\share_media\\server\\tmp\\thumbnail\\"+thumbnailName;
+        String thumbnailName = "thumbnailvideo-frame-" + UUID.randomUUID().toString() + file.getOriginalFilename()+".png";
+        String toFilePathThumbnail = "C:\\Users\\qsw233\\Desktop\\project\\share_media\\server\\tmp\\thumbnail\\"+thumbnailName;
+        MediaFileDto mediaFileDto = new MediaFileDto();
         try {
             Picture picture = FrameGrab.getFrameFromFile(
-                    new File(filePath.toString()), frameNumber);
+                    new File(toFilePath.toString()), frameNumber);
             BufferedImage bufferedImage = AWTUtil.toBufferedImage(picture);
             ImageIO.write(bufferedImage, "png", new File(
-                    toFilePath));
+                    toFilePathThumbnail));
         } catch (Exception e1) {
             e1.printStackTrace();
+            return mediaFileDto;
         }
-        MediaFileDto mediaFileDto = new MediaFileDto();
         mediaFileDto.setThumbnail_name(thumbnailName);
-        mediaFileDto.setThumbnail_path(toFilePath);
+        mediaFileDto.setThumbnail_path(toFilePathThumbnail);
 
         return mediaFileDto;
     }

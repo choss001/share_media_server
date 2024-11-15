@@ -18,6 +18,7 @@ public class MediaFile {
         setFileName(mediaFileDto.getFileName());
         setUploadDate(mediaFileDto.getUploadDate());
         setFilePath(mediaFileDto.getFilePath());
+        setDeleteYn(mediaFileDto.getDeleteYn());
     }
 
     @Id
@@ -29,6 +30,19 @@ public class MediaFile {
 
     @Column(nullable = false)
     private String filePath;
+
+
+    public Character getDeleteYn() {
+        return deleteYn;
+    }
+
+    public void setDeleteYn(Character deleteYn) {
+        this.deleteYn = deleteYn;
+    }
+
+    @Column(nullable = false)
+    private Character deleteYn;
+
 
     private String thumbnail_name;
 
@@ -88,7 +102,7 @@ public class MediaFile {
         this.thumbnail_name = thumbnail_name;
     }
 
-    public String getThumbnail_path() {
+    public String getThumbnailPath() {
         return thumbnail_path;
     }
 

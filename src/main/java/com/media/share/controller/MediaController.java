@@ -1,9 +1,11 @@
 package com.media.share.controller;
 
 import com.media.share.dto.MediaFileDto;
+import com.media.share.dto.MediaResponse;
 import com.media.share.model.MediaFile;
 import com.media.share.repository.MediaFileRepository;
 import com.media.share.service.MakeThumbNail;
+import org.jcodec.common.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,16 +20,16 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -58,6 +60,47 @@ public class MediaController {
     @GetMapping("/hello")
     public ResponseEntity<String> sayHello() {
         return ResponseEntity.ok("Hello from Spring Boot!");
+    }
+
+    @GetMapping("/mediaList")
+    public ResponseEntity<List<MediaResponse>> getList() {
+        List<MediaResponse> responseList = mediaFileRepository.findAll().stream().filter(mediaFile -> mediaFile.getDeleteYn() == 'N').map(mediaFile -> {
+            MediaResponse response = new MediaResponse();
+            response.setId(mediaFile.getId());
+            response.setFileName(mediaFile.getFileName());
+            response.setFilePath(mediaFile.getFilePath());
+            response.setFileType(mediaFile.getFileType());
+            response.setUploadDate(mediaFile.getUploadDate());
+            response.setThumbnailName(mediaFile.getThumbnail_name());
+            response.setThumbnailPath(mediaFile.getThumbnailPath());
+
+            try {
+                if (mediaFile.getThumbnailPath() == null) response.setImage(new byte[0]);
+                else{
+                    InputStream in = new FileInputStream(mediaFile.getThumbnailPath());
+                    response.setImage(IOUtils.toByteArray(in));
+                }
+
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            return response;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok()
+                .body(responseList);
+    }
+
+    @GetMapping(
+            value = "/image/{id}",
+            produces = MediaType.IMAGE_PNG_VALUE
+            )
+    public @ResponseBody byte[] getImage(@PathVariable("id") Long id) throws IOException{
+        Optional<MediaFile> byId = mediaFileRepository.findById(id);
+
+        InputStream in = new FileInputStream(byId.get().getThumbnailPath());
+        return IOUtils.toByteArray(in);
     }
 
     @GetMapping("/stream/{videoId}")
@@ -92,7 +135,7 @@ public class MediaController {
             file.transferTo(filePath.toFile());
 
             //make thumbnail
-            MediaFileDto mediaFileDto = makeThumbNail.doMake(file);
+            MediaFileDto mediaFileDto = makeThumbNail.doMake(file, filePath);
             // Generate a download URL
             String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
                     .path("/files/")
@@ -104,6 +147,7 @@ public class MediaController {
             mediaFileDto.setFilePath(filePath.toString());
             mediaFileDto.setFileType(file.getContentType());
             mediaFileDto.setUploadDate(java.time.LocalDateTime.now());
+            mediaFileDto.setDeleteYn('N');
 
             MediaFile mediaFile = new MediaFile(mediaFileDto);
             mediaFileRepository.save(mediaFile);
@@ -116,5 +160,23 @@ public class MediaController {
             logger.info(e.toString());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload file");
         }
+    }
+
+    @DeleteMapping("/deleteMedia/{videoId}")
+    public  ResponseEntity<String> deleteMedia(@PathVariable("videoId") Long videoId) throws MalformedURLException, FileNotFoundException {
+
+        //db update
+        Optional<MediaFile> mediaFile = mediaFileRepository.findById(videoId);
+        if(mediaFile.isEmpty())return ResponseEntity.ok().body("not found");
+        mediaFile.get().setDeleteYn('Y');
+        mediaFileRepository.save(mediaFile.get());
+
+        //delete file
+        File fileMedia = new File(mediaFile.get().getFilePath());
+        File fileThumbnail = new File(mediaFile.get().getThumbnailPath());
+
+        if (fileMedia.delete() && fileThumbnail.delete()) System.out.println("File deleted successfully");
+        else System.out.println("Filed to delete file.");
+        return ResponseEntity.ok("Delete success");
     }
 }

@@ -15,8 +15,16 @@ public class MediaFileDto {
     private String fileType;
 
     private LocalDateTime uploadDate;
+    private Character deleteYn;
 
-    // Getters and setters
+    public Character getDeleteYn() {
+        return deleteYn;
+    }
+
+    public void setDeleteYn(Character deleteYn) {
+        this.deleteYn = deleteYn;
+    }
+// Getters and setters
 
     public Long getId() {
         return id;
