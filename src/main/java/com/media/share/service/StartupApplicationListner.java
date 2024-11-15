@@ -19,8 +19,8 @@ public class StartupApplicationListner implements ApplicationListener<Applicatio
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        System.out.println("Database URL: " + databaseUrl);
-        System.out.println("Database username : "+ databaseUsername);
-        System.out.println("Database passwrod : "+ databasePassword);
+        //System.out.println("Database URL: " + databaseUrl);
+        //System.out.println("Database username : "+ databaseUsername);
+        //System.out.println("Database passwrod : "+ databasePassword);
     }
 }
