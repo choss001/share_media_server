@@ -9,8 +9,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:3001") // Next.js default port
-                .allowedOrigins("http://183.102.80.161:3000")
+                .allowedOrigins("http://localhost:3001",
+                        "http://183.102.80.161:3000") // Next.js default port
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
     }
 }
