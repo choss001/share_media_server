@@ -22,9 +22,6 @@ WORKDIR /app
 # Copy only the generated JAR file from the previous stage
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Expose the application port
-EXPOSE 8080
-
 # Set the command to run the JAR file
-CMD ["java", "-jar", "-Dspring.profiles.active=prod", "app.jar"]
+CMD ["java", "-jar", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-Dspring.profiles.active=prod", "app.jar"]
 
