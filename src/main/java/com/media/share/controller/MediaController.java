@@ -1,10 +1,13 @@
 package com.media.share.controller;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.media.share.dto.MediaFileDto;
 import com.media.share.dto.MediaResponse;
 import com.media.share.model.MediaFile;
 import com.media.share.repository.MediaFileRepository;
 import com.media.share.service.MakeThumbNail;
+import com.media.share.service.ThumbnailCacheService;
 import org.jcodec.common.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +29,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +52,9 @@ public class MediaController {
     private MediaFileRepository mediaFileRepository;
 
     @Autowired
+    private ThumbnailCacheService thumbnailCacheService;
+
+    @Autowired
     private MakeThumbNail makeThumbNail;
 
 
@@ -66,8 +73,15 @@ public class MediaController {
         return ResponseEntity.ok("Hello from Spring Boot!");
     }
 
+
+    private final Cache<Long, byte[]> thumbnailCache = Caffeine.newBuilder()
+            .maximumSize(100) // Limit cache size
+            .expireAfterWrite(Duration.ofMinutes(10)) // Cache expiry
+            .build();
+
     @GetMapping("/mediaList")
     public ResponseEntity<List<MediaResponse>> getList() {
+
         List<MediaResponse> responseList = mediaFileRepository.findAll().stream().filter(mediaFile -> mediaFile.getDeleteYn() == 'N').map(mediaFile -> {
             MediaResponse response = new MediaResponse();
             response.setId(mediaFile.getId());
@@ -77,19 +91,7 @@ public class MediaController {
             response.setUploadDate(mediaFile.getUploadDate());
             response.setThumbnailName(mediaFile.getThumbnail_name());
             response.setThumbnailPath(mediaFile.getThumbnailPath());
-
-            try {
-                if (mediaFile.getThumbnailPath() == null) response.setImage(new byte[0]);
-                else{
-                    InputStream in = new FileInputStream(mediaFile.getThumbnailPath());
-                    response.setImage(IOUtils.toByteArray(in));
-                }
-
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            response.setImage(thumbnailCacheService.getThumbnail(mediaFile));
             return response;
         }).collect(Collectors.toList());
         return ResponseEntity.ok()
