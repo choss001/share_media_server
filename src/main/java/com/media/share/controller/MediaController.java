@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
@@ -106,7 +107,7 @@ public class MediaController {
         return IOUtils.toByteArray(in);
     }
 
-    @GetMapping("/stream/{videoId}")
+    @GetMapping("/stream/test/{videoId}")
     public ResponseEntity<Resource> streamVideo(@PathVariable("videoId") Long videoId) throws MalformedURLException, FileNotFoundException {
         //Video video = videoRepository.findById(videoId).orElseThrow(() -> new RuntimeException("Video not found"));
 
@@ -162,6 +163,41 @@ public class MediaController {
             logger.info(e.toString());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload file");
         }
+    }
+    @GetMapping("/stream/{videoId}")
+    public ResponseEntity<Resource> streamVideo(@PathVariable("videoId") Long videoId, @RequestHeader(value = "Range", required = false) String range) throws IOException {
+        Optional<MediaFile> mediaFile = mediaFileRepository.findById(videoId);
+        if (mediaFile.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Return 404 if not found
+        }
+        String filePath = mediaFile.get().getFilePath();
+        File videoFile = new File(filePath);
+
+        long fileLength = videoFile.length();
+        long start = 0, end = fileLength - 1;
+
+        // Parse Range header
+        if (range != null) {
+            String[] ranges = range.replace("bytes=", "").split("-");
+            System.out.println("range[0]: "+ranges[0]);
+            start = Long.parseLong(ranges[0]);
+            if (ranges.length > 1) {
+                System.out.println("range[1] :"+ ranges[1]);
+                end = Long.parseLong(ranges[1]);
+            }
+        }
+
+        long contentLength = end - start + 1;
+
+        InputStream inputStream = new FileInputStream(videoFile);
+        inputStream.skip(start);
+
+        return ResponseEntity.status(range != null ? HttpStatus.PARTIAL_CONTENT : HttpStatus.OK)
+                .header("Content-Type", "video/mp4")
+                .header("Accept-Ranges", "bytes")
+                .header("Content-Length", String.valueOf(contentLength))
+                .header("Content-Range", "bytes " + start + "-" + end + "/" + fileLength)
+                .body(new InputStreamResource(inputStream));
     }
 
     @DeleteMapping("/deleteMedia/{videoId}")
