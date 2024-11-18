@@ -37,9 +37,9 @@ public class MakeThumbNail {
 
         int frameNumber = 0;
         String thumbnailName = "thumbnailvideo-frame-" + UUID.randomUUID().toString() + file.getOriginalFilename()+".png";
-        String toFilePathThumbnail = filePathBase+"thumbnail\\"+thumbnailName;
+        String thumbnailPath = Paths.get(filePathBase, "thumbnail", thumbnailName).toString();
         MediaFileDto mediaFileDto = new MediaFileDto();
-        File outputFile = new File(toFilePathThumbnail);
+        File outputFile = new File(thumbnailPath);
         try {
             Picture picture = FrameGrab.getFrameFromFile(
                     new File(toFilePath.toString()), frameNumber);
@@ -56,7 +56,7 @@ public class MakeThumbNail {
                 ImageWriteParam iwp = imageWriter.getDefaultWriteParam();
 
                 imageWriter.write(null, new IIOImage(bufferedImage, null, null), iwp);
-                mediaFileDto.setThumbnail_path(toFilePathThumbnail);
+                mediaFileDto.setThumbnail_path(thumbnailPath);
                 mediaFileDto.setThumbnail_name(thumbnailName);
             } catch (IOException e) {
                 e.printStackTrace();
