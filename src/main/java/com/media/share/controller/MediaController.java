@@ -138,6 +138,9 @@ public class MediaController {
             Files.createDirectories(filePath.getParent()); // Ensure directory exists
             file.transferTo(filePath.toFile());
 
+            Optional<MediaFile> byFileNameAndFileSize = mediaFileRepository.findByFileNameAndFileSize(file.getOriginalFilename(), file.getSize());
+            if (!byFileNameAndFileSize.isEmpty()) return ResponseEntity.ok("이미 있는 동영상입니다.");
+
             //make thumbnail
             MediaFileDto mediaFileDto = makeThumbNail.doMake(file, filePath);
             // Generate a download URL
@@ -151,6 +154,7 @@ public class MediaController {
             mediaFileDto.setFilePath(filePath.toString());
             mediaFileDto.setFileType(file.getContentType());
             mediaFileDto.setUploadDate(java.time.LocalDateTime.now());
+            mediaFileDto.setFileSize(file.getSize());
             mediaFileDto.setDeleteYn('N');
 
             MediaFile mediaFile = new MediaFile(mediaFileDto);
@@ -158,13 +162,28 @@ public class MediaController {
 
 
 
-            return ResponseEntity.ok(fileDownloadUri);
+            return ResponseEntity.ok("SUCCESS");
 
         } catch (IOException e) {
             logger.info(e.toString());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload file");
         }
     }
+
+    @GetMapping("/refined/size")
+    public ResponseEntity<String> refined(){
+        List<MediaFile> all = mediaFileRepository.findAll();
+        all.forEach(item -> {
+           if (item.getFileSize()==null || item.getFileSize() == 0){
+               File videoFile = new File(item.getFilePath());
+               item.setFileSize(videoFile.length());
+               mediaFileRepository.save(item);
+           }
+        });
+        return ResponseEntity.ok("SUCCESS");
+    }
+
+
     @GetMapping("/stream/{videoId}")
     public ResponseEntity<Resource> streamVideo(@PathVariable("videoId") Long videoId, @RequestHeader(value = "Range", required = false) String range) throws IOException {
         Optional<MediaFile> mediaFile = mediaFileRepository.findById(videoId);

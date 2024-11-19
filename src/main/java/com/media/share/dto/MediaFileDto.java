@@ -7,6 +7,9 @@ public class MediaFileDto {
     private Long id;
     private String fileName;
 
+
+    private Long fileSize;
+
     private String filePath;
 
     private String thumbnail_name;
@@ -81,5 +84,13 @@ public class MediaFileDto {
 
     public void setThumbnail_path(String thumbnail_path) {
         this.thumbnail_path = thumbnail_path;
+    }
+
+    public Long getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
     }
 }
