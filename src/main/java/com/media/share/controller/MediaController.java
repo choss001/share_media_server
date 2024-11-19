@@ -91,7 +91,6 @@ public class MediaController {
             response.setUploadDate(mediaFile.getUploadDate());
             response.setThumbnailName(mediaFile.getThumbnail_name());
             response.setThumbnailPath(mediaFile.getThumbnailPath());
-            response.setImage(thumbnailCacheService.getThumbnail(mediaFile));
             return response;
         }).collect(Collectors.toList());
         return ResponseEntity.ok()
