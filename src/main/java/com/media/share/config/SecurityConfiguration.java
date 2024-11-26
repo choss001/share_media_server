@@ -59,10 +59,10 @@ public class SecurityConfiguration {
                     exceptionHandling.authenticationEntryPoint(authEntryPointJwt))
             .httpBasic(Customizer.withDefaults())
             .formLogin(Customizer.withDefaults())
-//            .authorizeHttpRequests(authorize -> authorize
-//                    .requestMatchers("/test","/mediaList").permitAll()
-//                    .anyRequest().authenticated()
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()
+            .authorizeHttpRequests(authorize -> authorize
+                    .requestMatchers("/test","/mediaList").permitAll()
+                    .anyRequest().authenticated()
+                //.authorizeHttpRequests(auth -> auth.anyRequest().permitAll()
             );
         return http.build();
     }
