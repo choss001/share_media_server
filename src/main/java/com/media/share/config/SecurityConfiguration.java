@@ -13,9 +13,11 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -42,28 +44,34 @@ public class SecurityConfiguration {
 
     }
 
-    @Bean
-    @Primary
-    public AuthenticationManagerBuilder configureAuthenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
-        authenticationManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
-        return authenticationManagerBuilder;
-
-    }
+//    @Bean
+//    @Primary
+//    public AuthenticationManagerBuilder configureAuthenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
+//        authenticationManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+//        return authenticationManagerBuilder;
+//
+//    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        AuthenticationManagerBuilder authManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        authManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+
         http
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .exceptionHandling(exceptionHandling ->
                     exceptionHandling.authenticationEntryPoint(authEntryPointJwt))
-            .httpBasic(Customizer.withDefaults())
-            .formLogin(Customizer.withDefaults())
+                .sessionManagement(sessionManagement ->
+                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))//          .httpBasic(Customizer.withDefaults())
+//          .formLogin(Customizer.withDefaults())
             .authorizeHttpRequests(authorize -> authorize
-                    .requestMatchers("/test","/mediaList").permitAll()
+                    .requestMatchers("/test","/mediaList", "/api/auth/**").permitAll()
+                    .requestMatchers("/api/test/**").authenticated()
                     .anyRequest().authenticated()
                 //.authorizeHttpRequests(auth -> auth.anyRequest().permitAll()
             );
+        http.addFilterBefore(authtokenFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

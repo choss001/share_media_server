@@ -46,6 +46,8 @@ public class AuthController {
 
     @PostMapping("/signin")
     public ResponseEntity<?> signin(@RequestBody SignInRequest signInRequest){
+        String password = passwordEncoder.encode(signInRequest.getPassword());
+        System.out.println("password : "+password);
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signInRequest.getUsername(), signInRequest.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtil.generateJwtToken(authentication);
@@ -59,7 +61,7 @@ public class AuthController {
         res.setToken(jwt);
         res.setId(userDetails.getId());
         res.setUsername(userDetails.getUsername());
-        res.setRoles(new ArrayList<>());
+        res.setRoles(roles);
         return ResponseEntity.ok(res);
     }
 
@@ -72,6 +74,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("email is already taken");
         }
         String hashedPassword = passwordEncoder.encode(signUpRequest.getPassword());
+        System.out.println("hasedPassword : "+hashedPassword);
         Set<Role> roles = new HashSet<>();
         Optional<Role> userRole = roleRepository.findByName(ERole.ROLE_USER);
         if (userRole.isEmpty()){

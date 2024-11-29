@@ -24,7 +24,7 @@ public class UserDetailsImpl implements UserDetails {
         this.id = id;
         this.username = username;
         this.email = email;
-        this. password = password;
+        this.password = password;
         this.authorities = authorities;
 
     }
@@ -35,8 +35,8 @@ public class UserDetailsImpl implements UserDetails {
         return new UserDetailsImpl(
                 user.getId(),
                 user.getUsername(),
-                user.getPassword(),
                 user.getEmail(),
+                user.getPassword(),
                 authorities);
 
     }
