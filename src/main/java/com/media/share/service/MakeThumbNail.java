@@ -20,6 +20,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
@@ -33,13 +34,15 @@ public class MakeThumbNail {
     @Value("${file.path}")
     private String filePathBase;
 
-    public MediaFileDto doMake(MultipartFile file, Path toFilePath){
+    public MediaFileDto doMake(MultipartFile file, Path toFilePath) throws IOException {
 
         int frameNumber = 0;
         String thumbnailName = "thumbnailvideo-frame-" + UUID.randomUUID().toString() + file.getOriginalFilename()+".png";
-        String toFilePathThumbnail = filePathBase+"thumbnail\\"+thumbnailName;
+        Path thumbnailPath = Paths.get(filePathBase, "thumbnail", thumbnailName);
+        String thumbnailPathStr = thumbnailPath.toString();
         MediaFileDto mediaFileDto = new MediaFileDto();
-        File outputFile = new File(toFilePathThumbnail);
+        File outputFile = new File(thumbnailPathStr);
+        Files.createDirectories(thumbnailPath.getParent()); // Ensure directory exists
         try {
             Picture picture = FrameGrab.getFrameFromFile(
                     new File(toFilePath.toString()), frameNumber);
@@ -56,7 +59,7 @@ public class MakeThumbNail {
                 ImageWriteParam iwp = imageWriter.getDefaultWriteParam();
 
                 imageWriter.write(null, new IIOImage(bufferedImage, null, null), iwp);
-                mediaFileDto.setThumbnail_path(toFilePathThumbnail);
+                mediaFileDto.setThumbnail_path(thumbnailPathStr);
                 mediaFileDto.setThumbnail_name(thumbnailName);
             } catch (IOException e) {
                 e.printStackTrace();
