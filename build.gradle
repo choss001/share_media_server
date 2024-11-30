@@ -1,3 +1,5 @@
+
+
 plugins {
 	id 'java'
 	id 'war'
@@ -5,16 +7,12 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.6'
 	id 'org.asciidoctor.jvm.convert' version '3.3.2'
 	id 'org.flywaydb.flyway' version '6.5.7'
+
 }
 
 group = 'com.media'
 version = '0.0.1-SNAPSHOT'
 
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
-}
 
 configurations {
 	compileOnly {
@@ -72,6 +70,12 @@ flyway {
 	password = '0000'
 	// Optionally, specify the location of migration files
 	locations = ['filesystem:src/main/resources/db/migration']
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
 }
 
 test {
