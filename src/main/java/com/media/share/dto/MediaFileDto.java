@@ -1,7 +1,10 @@
 package com.media.share.dto;
 
+import lombok.Data;
+
 import java.time.LocalDateTime;
 
+@Data
 public class MediaFileDto {
 
     private Long id;
@@ -19,6 +22,8 @@ public class MediaFileDto {
 
     private LocalDateTime uploadDate;
     private Character deleteYn;
+    private Integer requiredRole;
+    private Long userId;
 
     public Character getDeleteYn() {
         return deleteYn;

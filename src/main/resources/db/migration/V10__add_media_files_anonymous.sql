@@ -1,0 +1,2 @@
+INSERT INTO user (username, email, password) VALUES('anonymous','anonymous@email.aom','$2a$10$FS0iWKmIh3d1QrCCsLypb.Gs/3tH54EPpuqzQdQFBQ3kieww4xYiy');
+INSERT INTO user_to_sec_role(user_id, role_id) SELECT id, '1' FROM user WHERE username = 'anonymous';

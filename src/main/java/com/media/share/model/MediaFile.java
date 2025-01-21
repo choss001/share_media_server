@@ -3,23 +3,27 @@ package com.media.share.model;
 
 import com.media.share.dto.MediaFileDto;
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Data
 public class MediaFile {
 
     public MediaFile(){ }
 
     public MediaFile(MediaFileDto mediaFileDto){
-        setThumbnail_name(mediaFileDto.getThumbnail_name());
-        setThumbnail_path(mediaFileDto.getThumbnail_path());
+        setThumbnailName(mediaFileDto.getThumbnail_name());
+        setThumbnailPath(mediaFileDto.getThumbnail_path());
         setFileType(mediaFileDto.getFileType());
         setFileName(mediaFileDto.getFileName());
         setUploadDate(mediaFileDto.getUploadDate());
         setFilePath(mediaFileDto.getFilePath());
         setDeleteYn(mediaFileDto.getDeleteYn());
         setFileSize(mediaFileDto.getFileSize());
+        setRequiredRole(mediaFileDto.getRequiredRole());
+        setUserId(mediaFileDto.getUserId());
     }
 
     @Id
@@ -49,12 +53,16 @@ public class MediaFile {
     private Character deleteYn;
 
 
-    private String thumbnail_name;
+    private String thumbnailName;
 
-    private String thumbnail_path;
+    private String thumbnailPath;
     private String fileType;
 
     private LocalDateTime uploadDate;
+
+
+    private Integer requiredRole;
+    private Long userId;
 
     // Getters and setters
 
@@ -99,20 +107,20 @@ public class MediaFile {
     }
 
 
-    public String getThumbnail_name() {
-        return thumbnail_name;
+    public String getThumbnailName() {
+        return thumbnailName;
     }
 
-    public void setThumbnail_name(String thumbnail_name) {
-        this.thumbnail_name = thumbnail_name;
+    public void setThumbnailName(String thumbnailName) {
+        this.thumbnailName = thumbnailName;
     }
 
     public String getThumbnailPath() {
-        return thumbnail_path;
+        return thumbnailPath;
     }
 
-    public void setThumbnail_path(String thumbnail_path) {
-        this.thumbnail_path = thumbnail_path;
+    public void setThumbnailPath(String thumbnailPath) {
+        this.thumbnailPath = thumbnailPath;
     }
 
     public Long getFileSize() {
@@ -121,5 +129,13 @@ public class MediaFile {
 
     public void setFileSize(Long fileSize) {
         this.fileSize = fileSize;
+    }
+
+    public Integer getRequiredRole() {
+        return requiredRole;
+    }
+
+    public void setRequiredRole(Integer requiredRole) {
+        this.requiredRole = requiredRole;
     }
 }

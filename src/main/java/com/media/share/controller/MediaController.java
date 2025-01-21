@@ -4,8 +4,11 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.media.share.dto.MediaFileDto;
 import com.media.share.dto.MediaResponse;
+import com.media.share.dto.SignInRequest;
 import com.media.share.model.MediaFile;
+import com.media.share.model.User;
 import com.media.share.repository.MediaFileRepository;
+import com.media.share.repository.UserRepository;
 import com.media.share.service.MakeThumbNail;
 import com.media.share.service.ThumbnailCacheService;
 import org.jcodec.common.io.IOUtils;
@@ -19,6 +22,10 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,10 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -57,13 +61,19 @@ public class MediaController {
     @Autowired
     private MakeThumbNail makeThumbNail;
 
+    @Autowired
+    private UserRepository userRepository;
+
 
     @GetMapping("/test")
     @ResponseBody
     public HashMap<String, String> getTest() {
         logger.info(name);
         HashMap<String, String> map = new HashMap<>();
-        map.put("key", "Hello from Spring boot!");
+        //map.put("key", "Hello from Spring boot!");
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = ((SignInRequest)principal).getUsername();
+        map.put("key", username);
 
         return map;
     }
@@ -82,6 +92,49 @@ public class MediaController {
     @GetMapping("/mediaList")
     public ResponseEntity<List<MediaResponse>> getList() {
 
+        List<MediaResponse> responseList = new ArrayList<>();
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = "anonymousUserFromJss";
+        if (authentication != null && authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)){
+            Object principal = authentication.getPrincipal();
+            username = principal.toString();
+
+            responseList = mediaFileRepository.findAll().stream().filter(mediaFile -> mediaFile.getDeleteYn() == 'N').map(mediaFile -> {
+                MediaResponse response = new MediaResponse();
+                response.setId(mediaFile.getId());
+                response.setFileName(mediaFile.getFileName());
+                response.setFilePath(mediaFile.getFilePath());
+                response.setFileType(mediaFile.getFileType());
+                response.setUploadDate(mediaFile.getUploadDate());
+                response.setThumbnailName(mediaFile.getThumbnailName());
+                response.setThumbnailPath(mediaFile.getThumbnailPath());
+                return response;
+            }).collect(Collectors.toList());
+        } else {
+            responseList = mediaFileRepository.findByRequiredRole(1).stream().filter(mediaFile -> mediaFile.getDeleteYn() == 'N').map(mediaFile -> {
+                MediaResponse response = new MediaResponse();
+                response.setId(mediaFile.getId());
+                response.setFileName(mediaFile.getFileName());
+                response.setFilePath(mediaFile.getFilePath());
+                response.setFileType(mediaFile.getFileType());
+                response.setUploadDate(mediaFile.getUploadDate());
+                response.setThumbnailName(mediaFile.getThumbnailName());
+                response.setThumbnailPath(mediaFile.getThumbnailPath());
+                return response;
+            }).collect(Collectors.toList());
+
+        }
+
+        logger.info("username {}", username);
+
+        return ResponseEntity.ok()
+                .body(responseList);
+    }
+
+    @GetMapping("/personal/mediaList")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<MediaResponse>> getPersonalList(){
         List<MediaResponse> responseList = mediaFileRepository.findAll().stream().filter(mediaFile -> mediaFile.getDeleteYn() == 'N').map(mediaFile -> {
             MediaResponse response = new MediaResponse();
             response.setId(mediaFile.getId());
@@ -89,7 +142,7 @@ public class MediaController {
             response.setFilePath(mediaFile.getFilePath());
             response.setFileType(mediaFile.getFileType());
             response.setUploadDate(mediaFile.getUploadDate());
-            response.setThumbnailName(mediaFile.getThumbnail_name());
+            response.setThumbnailName(mediaFile.getThumbnailName());
             response.setThumbnailPath(mediaFile.getThumbnailPath());
             return response;
         }).collect(Collectors.toList());
@@ -133,6 +186,21 @@ public class MediaController {
     public ResponseEntity<String> uploadMedia(@RequestParam("file") MultipartFile file) {
         try {
 
+            //get id from authentication
+            String principal = null;
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null & authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)){
+                principal = authentication.getPrincipal().toString();
+            }
+
+            Optional<User> user = null;
+            if (principal != null){
+                user = userRepository.findByUsername(principal);
+            } else {
+                user = userRepository.findByUsername("anonymous");
+            }
+
+
             // Save and move the file
             Path filePath = Paths.get(filePathBase, UUID.randomUUID().toString() + "_" + file.getOriginalFilename());
             Files.createDirectories(filePath.getParent()); // Ensure directory exists
@@ -155,6 +223,13 @@ public class MediaController {
             mediaFileDto.setFileType(file.getContentType());
             mediaFileDto.setUploadDate(java.time.LocalDateTime.now());
             mediaFileDto.setFileSize(file.getSize());
+            if (user.get().getUsername().equals("anonymous")){
+                mediaFileDto.setRequiredRole(1);
+            } else {
+                mediaFileDto.setRequiredRole(3);
+
+            }
+            mediaFileDto.setUserId(user.get().getId());
             mediaFileDto.setDeleteYn('N');
 
             MediaFile mediaFile = new MediaFile(mediaFileDto);
@@ -237,4 +312,5 @@ public class MediaController {
         else System.out.println("Filed to delete file.");
         return ResponseEntity.ok("Delete success");
     }
+
 }

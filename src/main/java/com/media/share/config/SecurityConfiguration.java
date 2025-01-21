@@ -5,7 +5,6 @@ import com.media.share.service.AuthEntryPointJwt;
 import com.media.share.service.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -54,9 +53,6 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        AuthenticationManagerBuilder authManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
-        authManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
-
         http
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
@@ -66,12 +62,12 @@ public class SecurityConfiguration {
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))//          .httpBasic(Customizer.withDefaults())
 //          .formLogin(Customizer.withDefaults())
             .authorizeHttpRequests(authorize -> authorize
-                    .requestMatchers("/test","/mediaList", "/api/auth/**").permitAll()
+                    .requestMatchers("/test","/mediaList", "/api/auth/**",
+                            "/upload/media","/thumbnail*", "/stream/**", "/tiptap/**").permitAll()
                     .requestMatchers("/api/test/**").authenticated()
                     .anyRequest().authenticated()
                 //.authorizeHttpRequests(auth -> auth.anyRequest().permitAll()
-            );
-        http.addFilterBefore(authtokenFilter, UsernamePasswordAuthenticationFilter.class);
+            ).addFilterBefore(authtokenFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
