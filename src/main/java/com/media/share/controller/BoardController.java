@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -58,26 +59,48 @@ public class BoardController {
 
         logger.info(user.get().toString());
 
-        Board board = new Board();
-        board.setContents(tempModel.getContents());
-        board.setTitle(tempModel.getTitle());
-        board.setUser_id(user.get().getId());
-        boardRepository.save(board);
+        //update
+        if (tempModel.getId() != 0){
+            Board getBoardFromId = boardRepository.getReferenceById(tempModel.getId());
+            getBoardFromId.setContents(tempModel.getContents());
+            getBoardFromId.setTitle(tempModel.getTitle());
+            getBoardFromId.setUser(user.get());
+            boardRepository.save(getBoardFromId);
+        //create
+        }else{
+            Board board = new Board();
+            board.setContents(tempModel.getContents());
+            board.setTitle(tempModel.getTitle());
+            board.setUser(user.get());
+            boardRepository.save(board);
+        }
         return ResponseEntity.ok("ok SUCCESS!!!");
     }
     @GetMapping("/board")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<List<TempModel>> getData(){
         List<Board> all = boardRepository.findAll();
 
         List<TempModel> collect = all.stream().map(board -> {
             TempModel tempModel = new TempModel();
+            tempModel.setId(board.getBoard_id());
             tempModel.setContents(board.getContents());
             tempModel.setTitle(board.getTitle());
             tempModel.setCreatedAt(board.getCreatedAt());
+            tempModel.setUpdateAt(board.getUpdateAt());
+            Optional<User> byUserId = userRepository.findById(board.getUser().getId());
+            tempModel.setUserName(byUserId.get().getUsername());
+            tempModel.setHits(board.getHits());
             return tempModel;
         }).collect(Collectors.toList());
+        logger.info(collect.toString());
         return ResponseEntity.ok().body(collect);
 
+    }
+    @PatchMapping("/board/hits/{id}")
+    public ResponseEntity<String> updateHits(@PathVariable("id") Long id){
+        boardRepository.incrementHits(id);
+        return ResponseEntity.ok().body("OK");
     }
 
     @Value("${file.path}")
@@ -96,14 +119,30 @@ public class BoardController {
         return ResponseEntity.ok().body(tempModel);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<TempModel> getTopic(@PathVariable("id") Long id){
+        Optional<Board> byIdWithUser = boardRepository.findByIdWithUser(id);
+        if (byIdWithUser.isEmpty()) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(convertToTempModel(byIdWithUser.get()));
+    }
+
+    private TempModel convertToTempModel(Board board){
+        return new TempModel( board.getBoard_id(), board.getTitle(), null, board.getContents(), board.getUser().getUsername(),
+                board.getCreatedAt(), board.getUpdateAt(), board.getHits());
+    }
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     static class TempModel{
+        private Long id;
         private String title;
-        private String contents;
         private String userToken;
-        private LocalDateTime createdAt;
+        private String contents;
+        private String userName;
+        private Instant createdAt;
+        private Instant updateAt;
+        private Long hits;
 
     }
 
