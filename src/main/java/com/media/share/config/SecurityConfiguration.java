@@ -42,7 +42,7 @@ public class SecurityConfiguration {
         return authenticationConfiguration.getAuthenticationManager();
 
     }
-
+// for test annotation
 //    @Bean
 //    @Primary
 //    public AuthenticationManagerBuilder configureAuthenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
