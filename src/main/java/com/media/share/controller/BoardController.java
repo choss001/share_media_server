@@ -77,7 +77,7 @@ public class BoardController {
         return ResponseEntity.ok("ok SUCCESS!!!");
     }
     @GetMapping("/board")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<List<TempModel>> getData(){
         List<Board> all = boardRepository.findAll();
 
