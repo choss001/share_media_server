@@ -96,7 +96,7 @@ public class MediaController {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = "anonymousUserFromJss";
-        if (authentication != null && authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)){
+        /*if (authentication != null && authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)){
             Object principal = authentication.getPrincipal();
             username = principal.toString();
 
@@ -124,7 +124,19 @@ public class MediaController {
                 return response;
             }).collect(Collectors.toList());
 
-        }
+        }*/
+
+        responseList = mediaFileRepository.findByRequiredRole(1).stream().filter(mediaFile -> mediaFile.getDeleteYn() == 'N').map(mediaFile -> {
+            MediaResponse response = new MediaResponse();
+            response.setId(mediaFile.getId());
+            response.setFileName(mediaFile.getFileName());
+            response.setFilePath(mediaFile.getFilePath());
+            response.setFileType(mediaFile.getFileType());
+            response.setUploadDate(mediaFile.getUploadDate());
+            response.setThumbnailName(mediaFile.getThumbnailName());
+            response.setThumbnailPath(mediaFile.getThumbnailPath());
+            return response;
+        }).collect(Collectors.toList());
 
         logger.info("username {}", username);
 
