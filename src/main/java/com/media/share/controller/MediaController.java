@@ -126,7 +126,7 @@ public class MediaController {
 
         }*/
 
-        responseList = mediaFileRepository.findByRequiredRole(1).stream().filter(mediaFile -> mediaFile.getDeleteYn() == 'N').map(mediaFile -> {
+        responseList = mediaFileRepository.findAll().stream().filter(mediaFile -> mediaFile.getDeleteYn() == 'N').map(mediaFile -> {
             MediaResponse response = new MediaResponse();
             response.setId(mediaFile.getId());
             response.setFileName(mediaFile.getFileName());
