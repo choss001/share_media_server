@@ -8,8 +8,9 @@ WORKDIR /app
 COPY . .
 
 # Build the application with the Gradle wrapper
-RUN apt-get update && \
+RUN apt-get update --fix-missing && \
     apt-get clean && \
+    apt-get upgrade -y && \
     ./gradlew bootJar
 #RUN ./gradlew bootJar
 
