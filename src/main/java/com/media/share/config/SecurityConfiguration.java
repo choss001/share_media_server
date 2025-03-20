@@ -64,8 +64,7 @@ public class SecurityConfiguration {
             .authorizeHttpRequests(authorize -> authorize
                     .requestMatchers("/test","/mediaList", "/api/auth/**",
                             "/upload/media","/thumbnail**", "/stream/**", "/tiptap/**", "/car/**").permitAll()
-                    .requestMatchers("/api/test/**").authenticated()
-                    .anyRequest().authenticated()
+                            .anyRequest().authenticated()
                 //.authorizeHttpRequests(auth -> auth.anyRequest().permitAll()
             ).addFilterBefore(authtokenFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
