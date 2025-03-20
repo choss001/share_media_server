@@ -8,10 +8,14 @@ WORKDIR /app
 COPY . .
 
 # Build the application with the Gradle wrapper
-RUN apt-get update --fix-missing && \
+RUN sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirror.ubuntu.com/ubuntu|g' /etc/apt/sources.list && \
     apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --fix-missing && \
     apt-get upgrade -y && \
     ./gradlew bootJar
+
+
 #RUN ./gradlew bootJar
 
 # Stage 2: Run the application
