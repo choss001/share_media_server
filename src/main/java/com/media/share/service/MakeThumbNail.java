@@ -16,6 +16,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -34,11 +35,13 @@ public class MakeThumbNail {
     @Value("${file.path}")
     private String filePathBase;
 
-    public MediaFileDto doMake(MultipartFile file, Path toFilePath) throws IOException {
+    public MediaFileDto doMake(MultipartFile file, Path toFilePath, String type) throws IOException {
 
         int frameNumber = 0;
-        String thumbnailName = "thumbnailvideo-frame-" + UUID.randomUUID().toString() + file.getOriginalFilename()+".png";
-        Path thumbnailPath = Paths.get(filePathBase, "thumbnail", thumbnailName);
+        String thumbnailName = "thumbnailvideo-frame-" +
+                UUID.randomUUID().toString() +
+                file.getOriginalFilename()+".png";
+        Path thumbnailPath = Paths.get(filePathBase, type, "thumbnail", thumbnailName);
         String thumbnailPathStr = thumbnailPath.toString();
         MediaFileDto mediaFileDto = new MediaFileDto();
         File outputFile = new File(thumbnailPathStr);
@@ -47,6 +50,9 @@ public class MakeThumbNail {
             Picture picture = FrameGrab.getFrameFromFile(
                     new File(toFilePath.toString()), frameNumber);
             BufferedImage bufferedImage = AWTUtil.toBufferedImage(picture);
+            if (bufferedImage.getHeight() < bufferedImage.getWidth()){
+                bufferedImage = rotateImage(bufferedImage);
+            }
 
             Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("png");
             if (!writers.hasNext()) {
@@ -62,7 +68,7 @@ public class MakeThumbNail {
                 mediaFileDto.setThumbnail_path(thumbnailPathStr);
                 mediaFileDto.setThumbnail_name(thumbnailName);
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("thumbnail error",e);
             } finally {
                 imageWriter.dispose(); // Ensure resources are freed
             }
@@ -71,12 +77,23 @@ public class MakeThumbNail {
 
 
         } catch (Exception e1) {
-            e1.printStackTrace();
+            logger.error("thumbnail error",e1);
             return mediaFileDto;
         }
         logger.info("Readable: {}", outputFile.canRead());
         logger.info("Writable: {}", outputFile.canWrite());
 
         return mediaFileDto;
+    }
+    private BufferedImage rotateImage(BufferedImage image) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+        BufferedImage rotated = new BufferedImage(height, width, image.getType());
+        Graphics2D g2d = rotated.createGraphics();
+        g2d.translate((height - width) / 2, (height - width) / 2);
+        g2d.rotate(Math.toRadians(90), height / 2.0, width / 2.0);
+        g2d.drawImage(image, 0, 0, null);
+        g2d.dispose();
+        return rotated;
     }
 }

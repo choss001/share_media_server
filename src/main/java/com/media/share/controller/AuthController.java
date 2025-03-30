@@ -11,17 +11,24 @@ import com.media.share.repository.RoleRepository;
 import com.media.share.repository.UserRepository;
 import com.media.share.service.UserDetailsImpl;
 import com.media.share.util.JwtUtil;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,6 +41,8 @@ public class AuthController {
     private AuthenticationManager authenticationManager;
     private UserDetailsService userDetailsService;
     private JwtUtil jwtUtil;
+    @Value("${app.environment}")
+    private String environment;
 
     public AuthController(UserRepository userRepository,
                           RoleRepository roleRepository,
@@ -56,16 +65,30 @@ public class AuthController {
         String jwt = jwtUtil.generateJwtToken(authentication);
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         List<String> roles = userDetails.getAuthorities().stream()
-                .map(item -> item.getAuthority())
-                .collect(Collectors.toList());
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+
+        boolean isProduction = "prod".equalsIgnoreCase(environment);
+        ResponseCookie cookie = ResponseCookie.from("jwtToken", jwt)
+                .httpOnly(true) // Prevents JavaScript access
+                .secure(isProduction) // Requires HTTPS
+                .sameSite(isProduction ? "None" : "Lax") // Allows cross-site requests (Important for Next.js)
+                .path("/")
+                .maxAge(Duration.ofDays(2))
+                .build();
+
+
 
         JwtResponse res = new JwtResponse();
-
         res.setToken(jwt);
         res.setId(userDetails.getId());
         res.setUsername(userDetails.getUsername());
         res.setRoles(roles);
-        return ResponseEntity.ok(res);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(res);
     }
 
     @PostMapping("/signup")
@@ -91,5 +114,24 @@ public class AuthController {
         user.setRoles(roles);
         userRepository.save(user);
         return ResponseEntity.ok("User registered success");
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(){
+        boolean isProduction = "prod".equalsIgnoreCase(environment);
+        ResponseCookie cookie = ResponseCookie.from("jwtToken", null)
+                .httpOnly(true) // Prevents JavaScript access
+                .secure(isProduction) // Requires HTTPS
+                .sameSite(isProduction ? "None" : "Lax") // Allows cross-site requests (Important for Next.js)
+                .path("/")
+                .maxAge(Duration.ofDays(0))
+                .build();
+
+        // Add the cookie to the response, so the browser deletes it
+
+        // Respond with a success message
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(null);
     }
 }

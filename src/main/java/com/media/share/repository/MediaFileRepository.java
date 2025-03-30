@@ -7,6 +7,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MediaFileRepository extends JpaRepository<MediaFile, Long> {
-    Optional<MediaFile> findByFileNameAndFileSize(String fileName, long fileSize);
+    Optional<MediaFile> findByFileNameAndFileSizeAndDeleteYn(String fileName, long fileSize, Character deleteYn);
     List<MediaFile> findByRequiredRole(Integer requiredRole);
 }

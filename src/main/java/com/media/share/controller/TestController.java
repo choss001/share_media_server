@@ -4,6 +4,8 @@ package com.media.share.controller;
 import com.media.share.dto.SignInRequest;
 import com.media.share.service.UserDetailsImpl;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -48,12 +50,9 @@ public class TestController {
 
     @GetMapping("/profile")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public SignInRequest profile(){
-        SecurityContext context = SecurityContextHolder.getContext();
-        Authentication authentication = context.getAuthentication();
-        String username = (String) authentication.getPrincipal();
-        SignInRequest signInRequest = new SignInRequest();
-        signInRequest.setUsername(username);
-        return signInRequest;
+    public ResponseEntity<?> profile(Authentication authentication){
+        if (authentication == null || !authentication.isAuthenticated())
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        return ResponseEntity.ok().body(null);
     }
 }
