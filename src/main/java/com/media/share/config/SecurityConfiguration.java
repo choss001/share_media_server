@@ -76,6 +76,7 @@ public class SecurityConfiguration {
         configuration.setAllowedOrigins(List.of("http://localhost:3001"
                 ,"https://a31.ddns.net")); // Allow your Next.js frontend
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // **Required for cookies**
         configuration.setExposedHeaders(List.of(HttpHeaders.SET_COOKIE)); // **Expose cookies to the frontend**
 
