@@ -74,7 +74,7 @@ public class SecurityConfiguration {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:3001",
-                "http://nginx_proxy")); // Allow your Next.js frontend
+                ,"https://a31.ddns.net")); // Allow your Next.js frontend
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowCredentials(true); // **Required for cookies**
         configuration.setExposedHeaders(List.of(HttpHeaders.SET_COOKIE)); // **Expose cookies to the frontend**
