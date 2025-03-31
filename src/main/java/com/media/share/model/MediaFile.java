@@ -59,6 +59,11 @@ public class MediaFile {
     @Column(nullable = false)
     private String fileNameUid;
 
+    @Column(nullable = true)
+    private String fileNameHls;
+    @Column(nullable = true)
+    private String filePathHls;
+
 
     private String thumbnailName;
 

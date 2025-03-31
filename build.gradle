@@ -36,6 +36,8 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-elasticsearch
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-elasticsearch', version: '3.4.2'
 
+	implementation 'com.github.kokorin.jaffree:jaffree:2023.09.10'
+
 	implementation 'io.jsonwebtoken:jjwt:0.9.1'
 	//implementation 'javax.xml.bind:jaxb-api:2.3.0'
 

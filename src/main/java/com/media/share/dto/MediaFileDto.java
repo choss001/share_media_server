@@ -35,5 +35,7 @@ public class MediaFileDto {
     private Integer requiredRole;
     private Long userId;
     private String fileNameUid;
+    private String fileNameHls;
+    private String filePathHls;
 
 }
