@@ -341,7 +341,7 @@ public class MediaController {
     public ResponseEntity<Resource> medaiAuthCheck(@PathVariable("type") String type,
                                                    @PathVariable("filename") String filename,
                                                    Authentication authentication) throws IOException {
-        Path filePath = Paths.get("E:", "project", "file", "private", type, filename);;
+        Path filePath = Paths.get(filePathBase, "private", type, filename);;
         Resource file = new UrlResource(filePath.toUri());
 
         String headerType = "video/mp4";
