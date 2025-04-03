@@ -18,7 +18,9 @@ public class MediaResponse {
 
     private String thumbnailPath;
     private String fileType;
+    private String filePathHls;
     private byte[] image;
+    private String fileNameUid;
 
 
     private LocalDateTime uploadDate;

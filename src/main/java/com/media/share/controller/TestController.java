@@ -4,10 +4,13 @@ package com.media.share.controller;
 import com.media.share.dto.SignInRequest;
 import com.media.share.service.UserDetailsImpl;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authorization.method.AuthorizeReturnObject;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,6 +23,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/test")
 @Log4j2
 public class TestController {
+
+    @Autowired
+    private CacheManager cacheManager;
+
+
     @GetMapping("/all")
     public String allAccess(){
         return "PUublic Content.";
@@ -54,5 +62,10 @@ public class TestController {
         if (authentication == null || !authentication.isAuthenticated())
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         return ResponseEntity.ok().body(null);
+    }
+    @GetMapping("/cache")
+    public String clearAllCaches(){
+        cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
+        return "SUCCESS";
     }
 }

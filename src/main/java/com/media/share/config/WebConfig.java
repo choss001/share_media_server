@@ -41,7 +41,8 @@ public class WebConfig implements WebMvcConfigurer {
         logger.info("file base!! {}", "file:///"+filePathBase);
         registry.addResourceHandler("/resource/**")
                 .addResourceLocations("file:///"+filePathBase+"/public/") // or specify another location
-                .setCacheControl(CacheControl.maxAge(30, TimeUnit.DAYS).cachePublic());
+                .setCachePeriod(0);
+//                .setCacheControl(CacheControl.maxAge(0, TimeUnit.DAYS).cachePublic());
 
     }
 }

@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -129,10 +128,13 @@ public class MediaController {
                 .body(responseList);
     }
 
-    @GetMapping("/personal/mediaList")
-    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/hlsMediaList")
     public ResponseEntity<List<MediaResponse>> getPersonalList(){
-        List<MediaResponse> responseList = mediaFileRepository.findAll().stream().filter(mediaFile -> mediaFile.getDeleteYn() == 'N').map(mediaFile -> {
+        List<MediaResponse> responseList = mediaFileRepository.findAll()
+                .stream()
+                .filter(mediaFile -> mediaFile.getDeleteYn() == 'N')
+                .filter(mediaFile -> mediaFile.getFilePathHls() != null)
+                .map(mediaFile -> {
             MediaResponse response = new MediaResponse();
             response.setId(mediaFile.getId());
             response.setFileName(mediaFile.getFileName());
@@ -141,6 +143,9 @@ public class MediaController {
             response.setUploadDate(mediaFile.getUploadDate());
             response.setThumbnailName(mediaFile.getThumbnailName());
             response.setThumbnailPath(mediaFile.getThumbnailPath());
+            response.setFilePathHls(mediaFile.getFilePathHls());
+            response.setPublicYn(mediaFile.getPublicYn());
+            response.setFileNameUid(mediaFile.getFileNameUid());
             return response;
         }).collect(Collectors.toList());
         return ResponseEntity.ok()
@@ -211,8 +216,6 @@ public class MediaController {
             Files.createDirectories(mediaFilePath.getParent()); // Ensure directory exists
             file.transferTo(mediaFilePath.toFile());
 
-
-
             //make thumbnail
             MediaFileDto mediaFileDto = makeThumbNail.doMake(file, mediaFilePath, type);
 
@@ -234,6 +237,7 @@ public class MediaController {
             } else {
                 mediaFileDto.setRequiredRole(3);
             }
+
             mediaService.upload(mediaFileDto, file);
 
             MediaFile mediaFile = new MediaFile(mediaFileDto);
@@ -264,66 +268,55 @@ public class MediaController {
 
 
     @GetMapping("/stream/{videoId}")
-    public ResponseEntity<Resource> streamVideo(
-            @PathVariable("videoId") Long videoId,
-            @RequestHeader(value = "Range", required = false) String range,
-            Authentication authentication) throws IOException {
-
-        Optional<MediaFile> mediaFileOpt = mediaFileRepository.findById(videoId);
-        if (mediaFileOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+    public ResponseEntity<Resource> streamVideo(@PathVariable("videoId") Long videoId,
+                                                @RequestHeader(value = "Range", required = false) String range,
+                                                Authentication authentication) throws IOException {
+        Optional<MediaFile> mediaFile = mediaFileRepository.findById(videoId);
+        if (mediaFile.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Return 404 if not found
         }
 
-        MediaFile mediaFile = mediaFileOpt.get();
-        boolean isPrivate = mediaFile.getPublicYn() == 'N';
+        //check whether authenticate or not
+        MediaFile file = mediaFile.get();
+
+        boolean isPrivate = file.getPublicYn() == 'N';
         boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
         boolean isOwner = isAuthenticated &&
                 userRepository.findByUsername(authentication.getName())
-                        .map(user -> Objects.equals(mediaFile.getUserId(), user.getId()))
+                        .map(user -> Objects.equals(file.getUserId(), user.getId()))
                         .orElse(false);
 
         if (isPrivate && (!isAuthenticated || !isOwner)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
+        String filePath = mediaFile.get().getFilePath();
+        File videoFile = new File(filePath);
 
-        File videoFile = new File(mediaFile.getFilePath());
         long fileLength = videoFile.length();
-
         long start = 0, end = fileLength - 1;
-        boolean partialRequest = range != null && range.startsWith("bytes=");
 
-        if (partialRequest) {
+        // Parse Range header
+        if (range != null) {
             String[] ranges = range.replace("bytes=", "").split("-");
+            System.out.println("range[0]: "+ranges[0]);
             start = Long.parseLong(ranges[0]);
-            if (ranges.length > 1 && !ranges[1].isEmpty()) {
+            if (ranges.length > 1) {
+                System.out.println("range[1] :"+ ranges[1]);
                 end = Long.parseLong(ranges[1]);
             }
         }
 
         long contentLength = end - start + 1;
-        byte[] buffer = new byte[8192]; // Use a buffer for efficient streaming
 
-        RandomAccessFile raf = new RandomAccessFile(videoFile, "r");
-        raf.seek(start);
+        InputStream inputStream = new FileInputStream(videoFile);
+        inputStream.skip(start);
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(raf.getFD()))) {
-            int bytesRead;
-            while ((bytesRead = bis.read(buffer)) != -1 && outputStream.size() < contentLength) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-        }
-        raf.close();
-
-        ByteArrayResource byteArrayResource = new ByteArrayResource(outputStream.toByteArray());
-
-        return ResponseEntity.status(partialRequest ? HttpStatus.PARTIAL_CONTENT : HttpStatus.OK)
-                .header(HttpHeaders.CONTENT_TYPE, "video/mp4")
-                .header(HttpHeaders.ACCEPT_RANGES, "bytes")
-                .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength))
-                .header(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + fileLength)
-                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600") // Cache for 1 hour
-                .body(byteArrayResource);
+        return ResponseEntity.status(range != null ? HttpStatus.PARTIAL_CONTENT : HttpStatus.OK)
+                .header("Content-Type", "video/mp4")
+                .header("Accept-Ranges", "bytes")
+                .header("Content-Length", String.valueOf(contentLength))
+                .header("Content-Range", "bytes " + start + "-" + end + "/" + fileLength)
+                .body(new InputStreamResource(inputStream));
     }
 
     @DeleteMapping("/deleteMedia/{videoId}")
@@ -374,6 +367,11 @@ public class MediaController {
                     .body(file);
         }
         return null;
+    }
+    @GetMapping("/convert")
+    public ResponseEntity<String> convertMedia(@RequestParam("fileName") String fileName){
+        String result = mediaService.convertFormat(fileName);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/media/{id}")
