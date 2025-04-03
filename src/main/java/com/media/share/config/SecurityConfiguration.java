@@ -73,7 +73,8 @@ public class SecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3001" ,"https://a31.ddns.net")); // Allow your Next.js frontend
+        configuration.setAllowedOrigins(List.of("http://localhost:3001"
+                ,"https://a31.ddns.net", "https://a31.ddns.net:8090")); // Allow your Next.js frontend
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // **Required for cookies**

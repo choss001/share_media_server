@@ -24,9 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Log4j2
 public class TestController {
 
-    @Autowired
-    private CacheManager cacheManager;
-
 
     @GetMapping("/all")
     public String allAccess(){
@@ -62,10 +59,5 @@ public class TestController {
         if (authentication == null || !authentication.isAuthenticated())
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         return ResponseEntity.ok().body(null);
-    }
-    @GetMapping("/cache")
-    public String clearAllCaches(){
-        cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
-        return "SUCCESS";
     }
 }
