@@ -73,7 +73,7 @@ public class MediaService implements IMediaService{
                     videoPath, outputPath, outputPath
             );
             System.out.println(ffmpegCmd);
-            ProcessBuilder processBuilder = (environment.equals("prd")) ? new ProcessBuilder("/bin/bash", "-c", ffmpegCmd)
+            ProcessBuilder processBuilder = (environment.equals("prod")) ? new ProcessBuilder("/bin/bash", "-c", ffmpegCmd)
                     : new ProcessBuilder("cmd.exe", "/c", ffmpegCmd);;
             processBuilder.inheritIO();
             Process process = processBuilder.start();
