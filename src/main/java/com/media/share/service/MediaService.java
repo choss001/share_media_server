@@ -59,7 +59,9 @@ public class MediaService implements IMediaService{
 
     private String convertMethod(MediaFile mediaFile){
 
-        Path outputPath = Paths.get(filePathBase, "public", "media", "hls", mediaFile.getFileNameUid());
+        Path outputPath = mediaFile.getPublicYn() == 'Y' ? Paths.get(filePathBase, "public", "media", "hls", mediaFile.getFileNameUid())
+                : Paths.get(filePathBase, "private", "media", "hls", mediaFile.getFileNameUid());
+
         Path videoPath = Paths.get(mediaFile.getFilePath());
 
         try {

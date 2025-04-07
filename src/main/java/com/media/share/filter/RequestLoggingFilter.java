@@ -6,12 +6,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class RequestLoggingFilter extends OncePerRequestFilter {
@@ -24,17 +26,22 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        CachedBodyHttpServletRequest wrappedRequest = new CachedBodyHttpServletRequest(request);
-
         // Build full URL
+        String contentType = request.getContentType();
         String fullURL = getFullURL(request);
 
-        // Read body
-        String body = new String(wrappedRequest.getInputStream().readAllBytes());
+        if (contentType != null &&
+                (contentType.contains(MediaType.APPLICATION_JSON_VALUE)
+                        || contentType.contains(MediaType.APPLICATION_FORM_URLENCODED_VALUE))) {
 
-        logger.info("REQUEST: {}\nBODY: {}", fullURL, body);
-
-        filterChain.doFilter(wrappedRequest, response);
+            CachedBodyHttpServletRequest wrappedRequest = new CachedBodyHttpServletRequest(request);
+            String body = new String(wrappedRequest.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            logger.info("REQUEST: {}\nBODY: {}", fullURL, body);
+            filterChain.doFilter(wrappedRequest, response);
+        } else {
+            logger.info("REQUEST: {} (body skipped, content-type: {})", fullURL, contentType);
+            filterChain.doFilter(request, response); // do NOT wrap the request
+        }
     }
 
     private String getFullURL(HttpServletRequest request) {

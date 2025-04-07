@@ -1,8 +1,11 @@
 package com.media.share.controller;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.media.share.dto.SignInRequest;
 import com.media.share.service.UserDetailsImpl;
+import com.media.share.service.kafka.MediaUploadProducer;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
@@ -17,12 +20,18 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/test")
 @Log4j2
 public class TestController {
+
+    @Autowired
+    private MediaUploadProducer mediaUploadProducer;
 
 
     @GetMapping("/all")
@@ -59,5 +68,15 @@ public class TestController {
         if (authentication == null || !authentication.isAuthenticated())
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         return ResponseEntity.ok().body(null);
+    }
+    @GetMapping("/kafka")
+    public String test(@RequestParam("param") String param) throws JsonProcessingException {
+        Map<String, Object> metadata = Map.of(
+                "testKey", param
+        );
+        String message = new ObjectMapper().writeValueAsString(metadata);
+        mediaUploadProducer.sendConversionRequest("media-convert-topic", message);
+        return "SUCCESS";
+
     }
 }

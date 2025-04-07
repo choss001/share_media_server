@@ -4,6 +4,7 @@ package com.media.share.controller;
 import com.media.share.dto.JwtResponse;
 import com.media.share.dto.SignInRequest;
 import com.media.share.dto.SignUpRequest;
+import com.media.share.filter.RequestLoggingFilter;
 import com.media.share.model.ERole;
 import com.media.share.model.Role;
 import com.media.share.model.User;
@@ -13,6 +14,8 @@ import com.media.share.service.UserDetailsImpl;
 import com.media.share.util.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -33,7 +36,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 public class AuthController {
     private UserRepository userRepository;
     private RoleRepository roleRepository;
@@ -43,6 +46,8 @@ public class AuthController {
     private JwtUtil jwtUtil;
     @Value("${app.environment}")
     private String environment;
+
+    private static final Logger logger = LoggerFactory.getLogger(RequestLoggingFilter.class);
 
     public AuthController(UserRepository userRepository,
                           RoleRepository roleRepository,
@@ -134,4 +139,15 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(null);
     }
+    @GetMapping("/validate-token")
+    public ResponseEntity<String> validateToken(Authentication authentication, @RequestParam("mediaId") String mediaId){
+        if (authentication == null || !authentication.isAuthenticated()){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        logger.info("mediaId : {}", mediaId);
+        return ResponseEntity.ok("Success");
+
+    }
+
+
 }

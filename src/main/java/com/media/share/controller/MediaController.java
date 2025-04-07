@@ -98,7 +98,6 @@ public class MediaController {
 
         List<MediaResponse> responseList = new ArrayList<>();
 
-        String username = "anonymousUserFromJss";
         Optional<User> user = (authentication != null) ? userRepository.findByUsername(authentication.getName()) : Optional.empty();
 
         responseList = mediaFileRepository.findAll().stream()
@@ -122,18 +121,25 @@ public class MediaController {
                 })
                 .collect(Collectors.toList());
 
-        logger.info("username {}", username);
 
         return ResponseEntity.ok()
                 .body(responseList);
     }
 
     @GetMapping("/hlsMediaList")
-    public ResponseEntity<List<MediaResponse>> getPersonalList(){
+    public ResponseEntity<List<MediaResponse>> getPersonalList(Authentication authentication){
+
+        Optional<User> user = (authentication != null) ? userRepository.findByUsername(authentication.getName()) : Optional.empty();
+
         List<MediaResponse> responseList = mediaFileRepository.findAll()
                 .stream()
                 .filter(mediaFile -> mediaFile.getDeleteYn() == 'N')
                 .filter(mediaFile -> mediaFile.getFilePathHls() != null)
+                .filter(mediaFile -> {
+                    if (mediaFile.getPublicYn() =='Y') return true ;
+                    if (user.isEmpty()) return false;
+                    return Objects.equals(mediaFile.getUserId(), user.get().getId());
+                })
                 .map(mediaFile -> {
             MediaResponse response = new MediaResponse();
             response.setId(mediaFile.getId());
@@ -319,26 +325,33 @@ public class MediaController {
                 .body(new InputStreamResource(inputStream));
     }
 
-    @DeleteMapping("/deleteMedia/{videoId}")
-    public  ResponseEntity<String> deleteMedia(@PathVariable("videoId") Long videoId) throws IOException {
+    @DeleteMapping("/deleteMedia/{fileNameUid}")
+    public  ResponseEntity<String> deleteMedia(@PathVariable("fileNameUid") String fileNameUid) throws IOException {
 
         //db update
-        Optional<MediaFile> mediaFile = mediaFileRepository.findById(videoId);
+        Optional<MediaFile> mediaFile = mediaFileRepository.findByFileNameUid(fileNameUid);
         if(mediaFile.isEmpty())return ResponseEntity.ok().body("not found");
 
         //delete file
         File fileMedia = new File(mediaFile.get().getFilePath());
         File fileThumbnail = new File(mediaFile.get().getThumbnailPath());
+        File fileHls = new File(mediaFile.get().getFilePathHls());
 
 
         Path fileMediaPath = Paths.get(filePathBase,
                 "recycleBin", "media", fileMedia.getName());
         Path fileThumbnailPath = Paths.get(filePathBase,
                 "recycleBin", "thumbnail", fileThumbnail.getName());
+
+        Path fileHlsPath = Paths.get(filePathBase,
+                "recycleBin", "hls", fileHls.getName());
+
         Files.createDirectories(Paths.get(filePathBase,"recycleBin", "thumbnail"));
         Files.createDirectories(Paths.get(filePathBase,"recycleBin", "media"));
+        Files.createDirectories(Paths.get(filePathBase,"recycleBin", "hls"));
         Files.move(Paths.get(fileMedia.getAbsolutePath()),fileMediaPath, StandardCopyOption.REPLACE_EXISTING);
         Files.move(Paths.get(fileThumbnail.getAbsolutePath()),fileThumbnailPath, StandardCopyOption.REPLACE_EXISTING);
+        Files.move(Paths.get(fileHls.getAbsolutePath()),fileHlsPath, StandardCopyOption.REPLACE_EXISTING);
 
         mediaFile.get().setDeleteYn('Y');
         mediaFileRepository.save(mediaFile.get());
@@ -374,9 +387,9 @@ public class MediaController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/media/{id}")
-    public ResponseEntity<MediaFileDto> getMedia(@PathVariable("id") Long id, Authentication authentication){
-        Optional<MediaFile> mediaFile = mediaFileRepository.findById(id);
+    @GetMapping("/media/{fileNameUid}")
+    public ResponseEntity<MediaFileDto> getMedia(@PathVariable("fileNameUid") String fileNameUid, Authentication authentication){
+        Optional<MediaFile> mediaFile = mediaFileRepository.findByFileNameUid(fileNameUid);
         if (mediaFile.isEmpty())
             return ResponseEntity.internalServerError().body(null);
 

@@ -4,7 +4,10 @@ package com.media.share.model;
 import com.media.share.dto.MediaFileDto;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -70,7 +73,12 @@ public class MediaFile {
     private String thumbnailPath;
     private String fileType;
 
+    @Column(nullable = false)
+    @UpdateTimestamp
     private LocalDateTime uploadDate;
+    @Column(nullable = false)
+    @CreationTimestamp
+    private Instant createdAt;
 
 
     private Integer requiredRole;
