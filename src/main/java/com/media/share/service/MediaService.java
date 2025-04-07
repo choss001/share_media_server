@@ -94,5 +94,15 @@ public class MediaService implements IMediaService{
         return outputPath.toString();
     }
 
+    public String convertFormatAll(){
+        mediaFileRepository
+                .findByFilePathHlsIsNullAndDeleteYn('N')
+                .forEach(mediaFile -> {
+                    mediaFile.setFilePathHls(convertMethod(mediaFile));
+                    mediaFileRepository.save(mediaFile);
+                });
+        return "Conversion successful";
+    }
+
 
 }

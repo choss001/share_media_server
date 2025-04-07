@@ -1,5 +1,6 @@
 package com.media.share.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.media.share.dto.MediaFileDto;
@@ -12,6 +13,7 @@ import com.media.share.repository.UserRepository;
 import com.media.share.service.MakeThumbNail;
 import com.media.share.service.MediaService;
 import com.media.share.service.ThumbnailCacheService;
+import com.media.share.service.kafka.MediaUploadProducer;
 import org.jcodec.common.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +68,9 @@ public class MediaController {
 
     @Autowired
     private MediaService mediaService;
+
+    @Autowired
+    private MediaUploadProducer mediaUploadProducer;
 
 
     @GetMapping("/test")
@@ -249,6 +254,13 @@ public class MediaController {
             MediaFile mediaFile = new MediaFile(mediaFileDto);
             mediaFileRepository.save(mediaFile);
 
+            //kafka send
+            Map<String, Object> metadata = Map.of(
+                    "testKey", "testValue"
+            );
+            String message = new ObjectMapper().writeValueAsString(metadata);
+            mediaUploadProducer.sendConversionRequest("media-convert-topic", message);
+
 
 
             return ResponseEntity.ok("SUCCESS");
@@ -384,6 +396,12 @@ public class MediaController {
     @GetMapping("/convert")
     public ResponseEntity<String> convertMedia(@RequestParam("fileName") String fileName){
         String result = mediaService.convertFormat(fileName);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/convertAll")
+    public ResponseEntity<String> convertMedia(){
+        String result = mediaService.convertFormatAll();
         return ResponseEntity.ok(result);
     }
 
