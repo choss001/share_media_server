@@ -41,14 +41,13 @@ public class MediaService implements IMediaService{
     public String upload(MediaFileDto mediaFileDto, MultipartFile file) {
         return null;
     }
-    public String convertFormat(String fileName){
+    public String convertFormat(String fileNameUid){
         Optional<MediaFile> mediaFileFiltered = mediaFileRepository.findByFilePathHlsIsNullAndDeleteYn('N')
                 .stream()
-                .filter(mediaFile -> mediaFile.getFileName().equals(fileName)).findFirst();
+                .filter(mediaFile -> mediaFile.getFileNameUid().equals(fileNameUid)).findFirst();
         if (mediaFileFiltered.isEmpty()){
             return "Not found file name";
         }
-
         logger.info(mediaFileFiltered.get().getFilePath());
         logger.info(mediaFileFiltered.get().getFileName());
         mediaFileFiltered.get().setFilePathHls(convertMethod(mediaFileFiltered.get()));

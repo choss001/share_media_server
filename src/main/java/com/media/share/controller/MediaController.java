@@ -203,6 +203,7 @@ public class MediaController {
         try {
 
             //get id from authentication
+            String type = (publicYn == 'Y') ? "public" : "private";
             String principal = null;
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication != null && authentication.isAuthenticated()
@@ -212,6 +213,9 @@ public class MediaController {
 
             Optional<User> user = (principal != null) ? userRepository.findByUsername(principal)
                                                       : userRepository.findByUsername("anonymous");
+            if (publicYn == 'N' && user.get().getUsername().equals("anonymous")){
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No authentication user can have private setting");
+            }
 
             //check whether file is in there
             Optional<MediaFile> byFileNameAndFileSize = mediaFileRepository.findByFileNameAndFileSizeAndDeleteYn(
@@ -221,7 +225,6 @@ public class MediaController {
 
 
             // Save and move the file
-            String type = (publicYn == 'Y') ? "public" : "private";
             String uniqueFileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
             Path mediaFilePath = Paths.get(filePathBase,type,"media", uniqueFileName);
             Files.createDirectories(mediaFilePath.getParent()); // Ensure directory exists
@@ -256,12 +259,10 @@ public class MediaController {
 
             //kafka send
             Map<String, Object> metadata = Map.of(
-                    "testKey", "testValue"
+                    "fileNameUid", mediaFile.getFileNameUid()
             );
             String message = new ObjectMapper().writeValueAsString(metadata);
             mediaUploadProducer.sendConversionRequest("media-convert-topic", message);
-
-
 
             return ResponseEntity.ok("SUCCESS");
 
