@@ -10,6 +10,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 public class MediaConverterConsumer {
@@ -22,7 +23,7 @@ public class MediaConverterConsumer {
             System.out.println("Received: " + message);
             ObjectMapper objectMapper = new ObjectMapper();
             Map<String, String> map = objectMapper.readValue(message, new TypeReference<Map<String, String>>() {});
-            mediaService.convertFormat(map.get("fileNameUid"));
+            CompletableFuture.runAsync(() -> mediaService.convertFormat(map.get("fileNameUid")));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
