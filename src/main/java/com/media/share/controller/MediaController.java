@@ -54,6 +54,9 @@ public class MediaController {
     @Value("${file.path}")
     private String filePathBase;
 
+    @Value("${download.link}")
+    private String downloadLinkValue;
+
     @Autowired
     private MediaFileRepository mediaFileRepository;
 
@@ -192,6 +195,34 @@ public class MediaController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("video/mp4"))
                 .body(videoResource);
+    }
+
+    @PostMapping("/upload/file")
+    public ResponseEntity<Map<String, Object>> handleFileUpload(@RequestParam("file") MultipartFile file){
+        Map<String, Object> response = new HashMap<>();
+
+        if(file.isEmpty()){
+            response.put("message", "File is empty");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        try {
+            // Save the file (e.g., to local disk or cloud storage)
+            Path filePath = Path.of(filePathBase,"public","attachFile",file.getOriginalFilename());
+            File targetFile = new File(filePath.toString());
+            Files.createDirectories(filePath.getParent()); // Ensure directory exists
+            file.transferTo(targetFile);
+
+            String downloadLink = downloadLinkValue+"attachFile/"+file.getOriginalFilename();
+            response.put("message", "File uploaded successfully");
+            response.put("filename", file.getOriginalFilename());
+            response.put("fileUrl", downloadLink);
+            return ResponseEntity.ok(response);
+        } catch (IOException e) {
+            logger.error("exception ",e);
+            response.put("message", "Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
 

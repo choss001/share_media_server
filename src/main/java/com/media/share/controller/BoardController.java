@@ -1,5 +1,6 @@
 package com.media.share.controller;
 
+import com.media.share.dto.PagedResponse;
 import com.media.share.model.Board;
 import com.media.share.model.User;
 import com.media.share.repository.BoardRepository;
@@ -11,6 +12,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,6 +45,9 @@ public class BoardController {
     private BoardRepository boardRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    @Value("${download.link}")
+    private String downloadLinkValue;
 
     @PostMapping("/content")
     public ResponseEntity<String> insertData(@RequestBody TempModel tempModel){
@@ -78,10 +86,12 @@ public class BoardController {
     }
     @GetMapping("/board")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<List<TempModel>> getData(){
-        List<Board> all = boardRepository.findAll();
+    public ResponseEntity<PagedResponse<TempModel>> getData(@RequestParam(defaultValue = "0", name = "page") int page,
+                                                   @RequestParam(defaultValue = "10", name = "size") int size){
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Board> all = boardRepository.findAll(pageable);
 
-        List<TempModel> collect = all.stream().map(board -> {
+        List<TempModel> content = all.stream().map(board -> {
             TempModel tempModel = new TempModel();
             tempModel.setId(board.getBoard_id());
             tempModel.setContents(board.getContents());
@@ -93,8 +103,17 @@ public class BoardController {
             tempModel.setHits(board.getHits());
             return tempModel;
         }).collect(Collectors.toList());
-        logger.info(collect.toString());
-        return ResponseEntity.ok().body(collect);
+        logger.info(content.toString());
+
+
+        PagedResponse<TempModel> response = new PagedResponse<>();
+        response.setContent(content);
+        response.setPage(all.getNumber());
+        response.setSize(all.getSize());
+        response.setTotalElements(all.getTotalElements());
+        response.setTotalPages(all.getTotalPages());
+        response.setLast(all.isLast());
+        return ResponseEntity.ok().body(response);
 
     }
     @PatchMapping("/board/hits/{id}")
@@ -109,12 +128,13 @@ public class BoardController {
     @PostMapping("/image")
     public ResponseEntity<TempModel> image(@RequestParam("file") MultipartFile file) throws IOException {
 
-        String fileName = "thumbnail" + UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-        Path filePath = Paths.get(filePathBase,"thumbnail", fileName);
+        String fileName = "image" + UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+        Path filePath = Paths.get(filePathBase,"public","image", fileName);
         Files.createDirectories(filePath.getParent()); // Ensure directory exists
+        String viewLink = downloadLinkValue+"image/" + fileName;
         file.transferTo(filePath.toFile());
         TempModel tempModel = new TempModel();
-        tempModel.setContents(fileName);
+        tempModel.setContents(viewLink);
 
         return ResponseEntity.ok().body(tempModel);
     }

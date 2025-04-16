@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/test")
+@RequestMapping("/test")
 @Log4j2
 public class TestController {
 
