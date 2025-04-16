@@ -70,10 +70,15 @@ public class MediaService implements IMediaService{
             System.out.println(file);
             Files.createDirectories(outputPath);
 
+//            String ffmpegCmd = String.format(
+//                    "ffmpeg -i \"%s\" -c:v libx264 -c:a aac -strict -2 -f hls -hls_time 10 -hls_list_size 0 -hls_segment_filename \"%s/segment_%%4d.ts\"  \"%s/master.m3u8\" ",
+//                    videoPath, outputPath, outputPath
+//            );
             String ffmpegCmd = String.format(
-                    "ffmpeg -i \"%s\" -c:v libx264 -c:a aac -strict -2 -f hls -hls_time 10 -hls_list_size 0 -hls_segment_filename \"%s/segment_%%4d.ts\"  \"%s/master.m3u8\" ",
+                    "ffmpeg -i \"%s\" -c:v libx264 -preset veryfast -crf 23 -c:a aac -strict -2 -f hls -hls_time 10 -hls_list_size 0 -hls_segment_filename \"%s/segment_%%4d.ts\" \"%s/master.m3u8\"",
                     videoPath, outputPath, outputPath
             );
+
             System.out.println(ffmpegCmd);
             ProcessBuilder processBuilder = (environment.equals("prod")) ? new ProcessBuilder("/bin/bash", "-c", ffmpegCmd)
                     : new ProcessBuilder("cmd.exe", "/c", ffmpegCmd);;
