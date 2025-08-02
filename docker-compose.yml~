@@ -2,6 +2,7 @@ version: '3'
 services:
   elasticsearch:
     image: elasticsearch:8.8.0
+    container_name: dev-elasticsearch
     ports:
       - 9200:9200
       - 9300:9300
