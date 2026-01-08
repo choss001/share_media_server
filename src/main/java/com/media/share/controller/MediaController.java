@@ -411,6 +411,7 @@ public class MediaController {
                                                    @PathVariable("filename") String filename,
                                                    Authentication authentication) throws IOException {
         Path filePath = Paths.get(filePathBase, "private", type, filename);;
+        logger.info("filePath : {}",filePath);
         Resource file = new UrlResource(filePath.toUri());
 
         String headerType = "video/mp4";
