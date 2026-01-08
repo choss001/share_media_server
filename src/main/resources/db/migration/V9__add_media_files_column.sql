@@ -5,7 +5,7 @@ ADD CONSTRAINT fk_required_role
 FOREIGN KEY (required_role)
 REFERENCES sec_role(id);
 
-insert into share_media.user values(1, 'anonymous', 'anonymous@email.com', '$2a$10$FS0iWKmIh3d1QrCCsLypb.Gs/3tH54EPpuqzQdQFBQ3kieww4xYiy');
+insert into share_media.user(username, email, password) values('anonymous', 'anonymous@email.com', '$2a$10$FS0iWKmIh3d1QrCCsLypb.Gs/3tH54EPpuqzQdQFBQ3kieww4xYiy');
 
 ALTER TABLE media_file ADD user_id bigint NOT NULL;
 UPDATE media_file SET user_id = (SELECT id FROM `user` u LIMIT 1);
